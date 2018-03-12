@@ -83,7 +83,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(product in category1.products)
 
     def test_customer_has_order(self):
-        customer = Customer.query.filter_by(name='James T. Kirck').first()
+        customer = Customer.query.filter_by(name='James T. Kirk').first()
         order1 = Order(1, 'Waiting')
         order2 = Order(1, 'In Transit')
         db.session.add_all([order1, order2])
@@ -119,23 +119,23 @@ class TestApp(unittest.TestCase):
 # ***Test API***
 
     def test_get_orders_for_customers(self):
-        response = self.app.get('/api/customers/categories')
+        response = self.app.get('/api/products/categories')
         response_json = json.loads(response.data)
         expected_json = [
          {'category': 'Chemicals',
           'category_id': 2,
           'id': 1,
-          'name': 'James T. Kirck',
+          'name': 'James T. Kirk',
           'quantity': 10},
          {'category': 'Cleaning',
           'category_id': 1,
           'id': 1, 
-          'name': 'James T. Kirck',
+          'name': 'James T. Kirk',
           'quantity': 10},
          {'category': 'Household Supplies',
           'category_id': 3,
           'id': 1,
-          'name': 'James T. Kirck',
+          'name': 'James T. Kirk',
           'quantity': 2},
          {'category': 'Chemicals',
           'category_id': 2,
@@ -170,19 +170,12 @@ class TestApp(unittest.TestCase):
     def test_products(self):
         response = self.app.get('/api/products')
         response_json = json.loads(response.data)
-        expected_json = {
-          "1": "Bleach", 
-          "2": "hand soap", 
-          "3": "toilet paper", 
-          "4": "mop", 
-          "5": "small bucket"
-          }
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response_json, expected_json)
+        self.assertEqual(len(response_json), 5)
 
-    def test_producs_sold_bad_syntax(self):
-        order1 = Order(1, 'Waiting', date='11/20/2000')
-        order2 = Order(2, 'In Transit', date='3/5/2010')
+    def test_products_sold_bad_syntax(self):
+        order1 = Order(1, 'Waiting', date='2000-11-20')
+        order2 = Order(2, 'In Transit', date='2010-3-5')
         db.session.add_all([order1, order2])
         db.session.commit()
         order_item0 = OrderItem(5, 1, order1.id)
@@ -190,49 +183,31 @@ class TestApp(unittest.TestCase):
         order_item2 = OrderItem(25, 3, order2.id)
         db.session.add_all([order_item0, order_item1, order_item2])
         db.session.commit()
-        response = self.app.get('/api/orders', 
-            headers={'Content-Type': 'application/json'},
-            data=json.dumps({
-                'start_date': '1/1/2000',
-                'end_date': '6/15/2012',
-                'interval': 'monthhhhhhhh'
-                })
-            )
+        response = self.app.get('/api/orders/2000-1-1/2012-6-15/monthhhhh')
         response_json = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response_json['error'], 'Invalid interval format (use day, month, or year).')    
 
     def test_bad_date(self):
-        response = self.app.get('/api/orders', 
-            headers={'Content-Type': 'application/json'},
-            data=json.dumps({
-                'start_date': '13/1/200',
-                'end_date': '6/15/212',
-                'interval': 'monthhhhhhhh'
-                })
-            )
-        response_json = json.loads(response.data)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response_json['error'], 'Invalid date format, use MM/DD/YYYY (11/20/2000 for Nov 20, 2001)')
+        response = self.app.get('/api/orders/2000-1-1/201-6-15')
+        redirected_response = self.app.get(response.location)
+        response_json = json.loads(redirected_response.data)
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(redirected_response.status_code, 400)
+        self.assertEqual(response_json['error'], 'Invalid date format, use YYYY-MM-DD (2000-11-20 for Nov 20, 2001)')
 
     def test_products_sold_month(self):
-        order1 = Order(1, 'Waiting', date='11/20/2000')
-        order2 = Order(2, 'In Transit', date='3/5/2010')
+        order1 = Order(1, 'Waiting', date='2000-11-20')
+        order2 = Order(2, 'In Transit', date='2010-3-5')
         db.session.add_all([order1, order2])
         db.session.commit()
         order_item0 = OrderItem(5, 1, order1.id)
         order_item1 = OrderItem(10, 2, order1.id)
+
         order_item2 = OrderItem(25, 3, order2.id)
         db.session.add_all([order_item0, order_item1, order_item2])
         db.session.commit()
-        response = self.app.get('/api/orders', 
-            headers={'Content-Type': 'application/json'},
-            data=json.dumps({
-                'start_date': '1/1/2000',
-                'end_date': '6/15/2012',
-                'interval': 'month'
-                })
-            )
+        response = self.app.get('/api/orders/2000-1-1/2012-06-15/month')
         response_json = json.loads(response.data)
         expected_json = {
           'Bleach': 0.033112582781456956,
@@ -282,6 +257,20 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response_json), 4)
         self.assertEqual(response_json, expected_json)
+
+
+    def test_end_date_before_start_date(self):
+        response = self.app.get('/api/orders/2000-1-1/1991-1-1/')
+        response_json = json.loads(response.data)
+        self.assertTrue(response.status_code, 400)
+        self.assertEqual(response_json['error'], 'Invalid date range, ending date cannot be before starting date.')
+
+
+    def test_orders(self):
+        response = self.app.get('/api/orders')
+        response_json = json.loads(response.data)
+        self.assertTrue(response.status_code, 200)
+        self.assertEqual(len(response_json), 4)
 
 
 if __name__ == "__main__":
