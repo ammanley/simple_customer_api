@@ -87,14 +87,15 @@ The ability to create a modifiable list for instant-ordering is not very differe
 
 This approach is fairly easy to extend, but you may notice it doesn't look too different from simply creating an order with its associate order_details. This approach would create two new tables yes, but as I don't anticipate the order_lists or its associated order_lists_items being written or read to anywhere near as much as the orders and orders_details tables, you could more easily implement maintainable indexes on the list table, so that in the end the same amount of actual disk space is used to store your information, but your ability to recall and turn a order_list into an actual bulk order is much quicker.
 
- order_lists
+```
+order_lists
 ----------------
 id | customer.id
 
 order_lists_items
 ------------------------------------------
 id | order_list.id | product.id | quantity
-
+```
 
 **High Traffic/High Volume**
 A customer who orders later that has a store with an available item closer may get their order sooner than a customer who ordered earlier, but lives farther away from a store. But, a customer who orders earlier should never have to wait for their order to be processed after someone who orders later. To deal with high traffic for a limited item, you should have a Queue of orders placed - customers who place an order earlier are closer to the front of the queue, and get their orders fulfilled before people at the end of the queue. If the exact inventory shows that the item has run out, then people at the back of the Queue who placed their orders later need to be informed either that there will be a wait to get an item from a more distant store, or that they may need to re-think their order items.
