@@ -31,21 +31,21 @@ After you've set up your database, run ```python manage.py db init/migrate/upgra
 At this point, run ```python run.py ```, which will init your server from the provided app package, and your server will be running! Specify the optional PORT env variable to run on a particular port, the app will default to port 5000.
 
 
-### API
+## API
 
-**'/api/products'** provides JSON of all products and their IDs.
+```api/products'```  provides JSON of all products and their IDs.
 
-**'/api/customers** provides JSON of all customers.
+```api/customers``` provides JSON of all customers.
 
-**'/api/customers/\<id>'** provides JSON of all the products ordered across all orders for a particular customer id (and implicitly, that customer's name). Technically, this end-point actually returns all the OrderItems from all that customer's Orders. Will throw 404 on non-existant customer ID
+```api/customers/\<id>'``` provides JSON of all the products ordered across all orders for a particular customer id (and implicitly, that customer's name). Technically, this end-point actually returns all the OrderItems from all that customer's Orders. Will throw 404 on non-existant customer ID
 
-**'/api/orders'** provides JSON of all orders.
+```api/orders'``` provides JSON of all orders.
 
-**'/api/orders/categories'** provides a global breakdown of all customers, the categories they've ordered items from, and the number of items in that category they've ordered.
+```api/orders/categories'``` provides a global breakdown of all customers, the categories they've ordered items from, and the number of items in that category they've ordered.
 
-**'api/orders/YYYY-MM-DD/YYYY-MM-DD'** provides JSON of a breakdown of all orders within a certain date range, taking a start-date and an end-date. Will throw a JSON error code if date is formatted wrong, or if end-date is before start-date.
+```api/orders/YYYY-MM-DD/YYYY-MM-DD'``` provides JSON of a breakdown of all orders within a certain date range, taking a start-date and an end-date. Will throw a JSON error code if date is formatted wrong, or if end-date is before start-date.
 
-**'api/orders/YYYY-MM-DD/YYYY-MM-DD/<day/week/month>/<\export>'** provides JSON of a breakdown of all orders within a certain date range, and then breaks down how often particular items in that range were ordered by day/week/month. Including the optional ```export``` flag will download the results as a CSV file.
+```api/orders/YYYY-MM-DD/YYYY-MM-DD/<day/week/month>/<\export>'``` provides JSON of a breakdown of all orders within a certain date range, and then breaks down how often particular items in that range were ordered by day/week/month. Including the optional ```export``` flag will download the results as a CSV file.
 
 ## Walkthrough and Assumptions
 
@@ -76,6 +76,9 @@ SQLalchemy and Alembic were used to auto-magically create and manage SQL tables 
 **Product** represents a individual Product and it's specific information, many-to-many relationship to it's categories.
 
 **Category**, represents a individual Category with a many-to-many relation with Product.
+
+
+## Answers to Questions
 
 
 **Creating Lists**
