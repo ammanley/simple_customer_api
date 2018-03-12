@@ -14,19 +14,19 @@ This is a simple REST API built in Flask, designed to take REST URL inputs and r
 ```
 ## Getting Started
 
-1. Create a virtual enviroment and install Python packages and dependencies
+**1. Create a virtual enviroment and install Python packages and dependencies**
 
 Once you've cloned the project, create a Python virtual environment (virtualenv was used here, but isn't required), and then run ```pip install -r requirements.txt``` to fetch all required packages and their dependencies.
 
-2. Set DATABASE_URL env variable 
+**2. Set DATABASE_URL env variable **
 
 Once you've set up your virtual environment, you'll want to create a database in PostgreSQL, and set up a DATABASE\_URL env variable to point to your Postgres instance and provide the required username and password (which could be none if you're a local user using ident). The app defaults to look for a database called 'customer_api' if you have not set the DATABASE\_URL env variable.
 
-3. Setup database tables, seed database 
+**3. Setup database tables, seed database **
 
 After you've set up your database, run ```python manage.py db init/migrate/upgrade``` to set up the necessary tables from the provided migration folder. Optionally, you can also run```python seed.py``` to seed some starter values to play with (this is needed if you want to see results from the show_info.py script).
 
-4. Start development server, set optional PORT env variable
+**4. Start development server, set optional PORT env variable**
 
 At this point, run ```python run.py ```, which will init your server from the provided app package, and your server will be running! Specify the optional PORT env variable to run on a particular port, the app will default to port 5000.
 
