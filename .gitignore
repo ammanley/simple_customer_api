@@ -1,1 +1,6 @@
 app/__pycache__/
+.customer_api
+venv
+launch.json
+*.pyc
+testing.db

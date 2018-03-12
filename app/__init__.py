@@ -1,9 +1,7 @@
-from flask import Flask, render_template, jsonify, request, make_response
+from flask import Flask, render_template, jsonify, request, make_response, abort
 from flask_sqlalchemy import SQLAlchemy
 import os
 import datetime
-
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'postgres://localhost/customer_api'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -11,18 +9,58 @@ if os.environ.get('ENV') == 'prod':
     app.config['DEBUG'] = False
 else:
     app.config['DEBUG'] = True
-
 db = SQLAlchemy(app)
-
 from app.models import Customer, Category, Product, Order
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 
 @app.route("/", methods=['GET'])
 def root():
+    return "This is the root of the app, you probablly are looking for /api"
+
+
+@app.route("/api/", methods=['GET'])
+def index():
     """Just tell the user the app is running and the routes avaliable"""
     return render_template('index.html')
 
 
-@app.route("/customers/categories", methods=['GET'])
+@app.route("/api/customers", methods=['GET'])
+def customers():
+    """
+    Provides  JSON of all customers with thteir associated IDs (so you can look up someone easy during testing the API
+    """
+    customers = Customer.query.all()
+    return jsonify(customers)
+
+
+@app.route("/api/customers/<id>", methods=['GET'])
+def customers_orders(id):
+    """
+    Provide JSON of a customer's orders and their corresponding items
+    """
+    customer = Customer.query.filter_by(id=id).first()
+    if not customer:
+        #  return render_template('404.html'), 404
+        abort(404)
+    orders = customer.orders
+    results = []
+    for order in orders:
+        for item in order.order_items:
+            results.append({
+                'order.id': item.order_id, 
+                'product.id': item.product_id, 
+                'name': item.product.name, 
+                'quantity': item.quantity
+                })
+    return jsonify(results)
+
+
+@app.route("/api/customers/categories", methods=['GET'])
 def customer_categories():
     """
     Return JSON of the quantity of items purchased in a particular 
@@ -44,29 +82,7 @@ def customer_categories():
     return jsonify(results)
 
 
-@app.route("/customers", methods=['GET'])
-def customers():
-    """
-    Provides  JSON of all customers with thteir associated IDs (so you can lookup someone easy during testing the API
-    """
-    customers = Customer.query.all()
-    return jsonify(customers)
-
-
-@app.route("/customers/<id>", methods=['GET'])
-def customers_orders(id):
-    """
-    Provide JSON of a customer's orders and their corresponding items
-    """
-    orders = Customer.query.filter_by(id=id).first().orders
-    results = []
-    for order in orders:
-        for item in order.order_items:
-            results.append({'order.id': item.order_id, 'product.id': item.product_id, 'name': item.product.name, 'quantity': item.quantity})
-    return jsonify(results)
-
-
-@app.route("/products", methods=['GET'])
+@app.route("/api/products", methods=['GET'])
 def products():
     """
     Provide JSON of all current products that can be ordered and their product.ids
@@ -75,23 +91,23 @@ def products():
         results = {product.id: product.name for product in Product.query.all()}
         return jsonify(results)
 
-
-@app.route("/orders", methods=['GET'])
-def products_by_date():
+@app.route("/api/orders/<start_date>/<end_date>/", methods=['GET'])
+@app.route("/api/orders/<start_date>/<end_date>/<interval>", methods=['GET'])
+def products_by_date(start_date, end_date, interval=None):
     """
-    Provide a JSON GET request with 'start_date' and 'end_date' 
-    keys in mm/dd/yyyy format and a 'interval' key of day, week, or month
+    Provide a GET request with 'start_date' and 'end_date' 
+    keys in yyyy-mm-dd format and an optional 'interval' key of day, week, or month
     and returns list of all products sold in time interval, and how many by day/week/month
     """
     if request.method == 'GET':
-        json = request.get_json()
         try:
-            start_date = datetime.datetime.strptime(json['start_date'], '%m/%d/%Y')
-            end_date = datetime.datetime.strptime(json['end_date'], '%m/%d/%Y')
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
-            return make_response(jsonify(error='Invalid date format, use MM/DD/YYYY (11/20/2000 for Nov 20, 2001)'), 400)
-        interval = json['interval']
-        if interval not in ['day', 'month', 'year']:
+            return make_response(jsonify(
+                error='Invalid date format, use YYYY-MM-DD (2000-11-20 for Nov 20, 2001)'),
+                400)
+        if interval is not None and interval not in ['day', 'month', 'year']:
             return make_response(jsonify(error='Invalid interval format (use day, month, or year).'), 400)
         delta = end_date-start_date
         orders = Order.query.filter(Order.date.between(start_date, end_date)).all()
@@ -103,6 +119,13 @@ def products_by_date():
             results = {key: value/delta.days for key,value in items_quantities.items()}
         elif interval == 'month':
             results = {key: value/(int(delta.days/30)) for key,value in items_quantities.items()}
-        else: 
+        elif interval == 'year': 
             results = {key: value/int(delta.days/365.25) for key,value in items_quantities.items()}
+        else:
+            results = [
+                [order.customer_id, 
+                repr(order.customers), 
+                order.date.strftime('%Y-%m-%d'), 
+                repr(order.order_items)] for order in orders
+            ]
         return jsonify(results)

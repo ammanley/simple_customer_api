@@ -9,7 +9,7 @@
       "type": "python",
       "request": "launch",
       "stopOnEntry": true,
-      "pythonPath": "${config:python.pythonPath}",
+      "pythonPath": "${workspaceFolder}/.customer_api/bin/python3.5",
       "program": "${file}",
       "cwd": "${workspaceFolder}",
       "env": {},
@@ -81,11 +81,12 @@
       "type": "python",
       "request": "launch",
       "stopOnEntry": false,
-      "pythonPath": "${config:python.pythonPath}",
+      // "pythonPath": "${config:python.pythonPath}",
+      "pythonPath": "${workspaceFolder}/.customer_api/bin/python3.5",
       "module": "flask",
       "cwd": "${workspaceFolder}",
       "env": {
-        "FLASK_APP": "${workspaceFolder}/app.py"
+        "FLASK_APP": "${workspaceFolder}/run.py"
       },
       "args": [
         "run",

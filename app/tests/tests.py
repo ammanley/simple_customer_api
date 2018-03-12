@@ -34,18 +34,21 @@ class TestApp(unittest.TestCase):
         order2 = Order(2, 'In Transit')
         order3 = Order(3, 'Delivered')
 
-        customer1 = Customer('Donald Trump')
-        customer2 = Customer('George Washington')
-        customer3 = Customer('BILL Clinton')
+        customer1 = Customer('James T. Kirk')
+        customer2 = Customer('Jean Luc Picard')
+        customer3 = Customer('Jonathan Archer')
 
-        db.session.add_all([order0, order1, order2, order3, customer1, customer2, customer3, product0, product1, product2, product3, product5, category1, category2, category3])
+        db.session.add_all([order0, order1, order2, order3, customer1,
+          customer2, customer3, product0, product1, product2, product3, 
+          product5, category1, category2, category3])
         db.session.commit()
         order_item0 = OrderItem(5, product0.id, order0.id)
         order_item1 = OrderItem(5, product0.id, order1.id)
         order_item2 = OrderItem(2, product3.id, order1.id)
         order_item3 = OrderItem(20, product1.id, order2.id)
         order_item4 = OrderItem(1, product2.id, order3.id)
-        db.session.add_all([order_item0, order_item1, order_item2, order_item3, order_item4])
+        db.session.add_all([order_item0, order_item1, order_item2, order_item3,
+          order_item4])
         db.session.commit()
         
     def tearDown(self):
@@ -80,7 +83,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(product in category1.products)
 
     def test_customer_has_order(self):
-        customer = Customer.query.filter_by(name='Donald Trump').first()
+        customer = Customer.query.filter_by(name='James T. Kirck').first()
         order1 = Order(1, 'Waiting')
         order2 = Order(1, 'In Transit')
         db.session.add_all([order1, order2])
@@ -90,7 +93,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(order2 in customer.orders)
 
     def test_order_has_items(self):
-        customer = Customer.query.filter_by(name='George Washington').first()
+        customer = Customer.query.filter_by(name='Jean Luc Picard').first()
         order_items = customer.orders[0].order_items
         tp = Product.query.filter_by(name='toilet paper').first()
         self.assertEqual(len(order_items), 1)
@@ -116,45 +119,45 @@ class TestApp(unittest.TestCase):
 # ***Test API***
 
     def test_get_orders_for_customers(self):
-        response = self.app.get('/customers/categories')
+        response = self.app.get('/api/customers/categories')
         response_json = json.loads(response.data)
         expected_json = [
          {'category': 'Chemicals',
           'category_id': 2,
           'id': 1,
-          'name': 'Donald Trump',
+          'name': 'James T. Kirck',
           'quantity': 10},
          {'category': 'Cleaning',
           'category_id': 1,
           'id': 1, 
-          'name': 'Donald Trump',
+          'name': 'James T. Kirck',
           'quantity': 10},
          {'category': 'Household Supplies',
           'category_id': 3,
           'id': 1,
-          'name': 'Donald Trump',
+          'name': 'James T. Kirck',
           'quantity': 2},
          {'category': 'Chemicals',
           'category_id': 2,
           'id': 2,
-          'name': 'George Washington',
+          'name': 'Jean Luc Picard',
           'quantity': 20},
          {'category': 'Household Supplies',
           'category_id': 3,
           'id': 2,
-          'name': 'George Washington',
+          'name': 'Jean Luc Picard',
           'quantity': 20},
          {'category': 'Household Supplies',
           'category_id': 3,
           'id': 3,
-          'name': 'BILL Clinton',
+          'name': 'Jonathan Archer',
           'quantity': 1}
         ]
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response_json, expected_json)
 
     def test_customer_orders(self):
-        response = self.app.get('/customers/1')
+        response = self.app.get('/api/customers/1')
         response_json = json.loads(response.data)
         expected_json = [
           {'name': 'Bleach', 'order.id': 1, 'product.id': 1, 'quantity': 5},
@@ -165,7 +168,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(response_json, expected_json)
 
     def test_products(self):
-        response = self.app.get('/products')
+        response = self.app.get('/api/products')
         response_json = json.loads(response.data)
         expected_json = {
           "1": "Bleach", 
@@ -187,7 +190,7 @@ class TestApp(unittest.TestCase):
         order_item2 = OrderItem(25, 3, order2.id)
         db.session.add_all([order_item0, order_item1, order_item2])
         db.session.commit()
-        response = self.app.get('/orders', 
+        response = self.app.get('/api/orders', 
             headers={'Content-Type': 'application/json'},
             data=json.dumps({
                 'start_date': '1/1/2000',
@@ -200,7 +203,7 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response_json['error'], 'Invalid interval format (use day, month, or year).')    
 
     def test_bad_date(self):
-        response = self.app.get('/orders', 
+        response = self.app.get('/api/orders', 
             headers={'Content-Type': 'application/json'},
             data=json.dumps({
                 'start_date': '13/1/200',
@@ -222,7 +225,7 @@ class TestApp(unittest.TestCase):
         order_item2 = OrderItem(25, 3, order2.id)
         db.session.add_all([order_item0, order_item1, order_item2])
         db.session.commit()
-        response = self.app.get('/orders', 
+        response = self.app.get('/api/orders', 
             headers={'Content-Type': 'application/json'},
             data=json.dumps({
                 'start_date': '1/1/2000',
@@ -240,15 +243,35 @@ class TestApp(unittest.TestCase):
         self.assertEqual(len(response_json), 3)
         self.assertEqual(response_json, expected_json)
 
+    def test_products_sold(self):
+        response = self.app.get('/api/orders/2000-1-1/2018-06-15/')
+        response_json = json.loads(response.data)
+        expected_json = [
+            [1,
+            'James T. Kirk',
+            '2018-03-11',
+            '[Order ID: 1, Quantity: 5, Product: Bleach]'],
+            [1,
+            'James T. Kirk',
+            '2018-03-11',
+            '[Order ID: 2, Quantity: 5, Product: Bleach, Order ID: 2, Quantity: 2, '
+            'Product: small bucket]'],
+            [2,
+            'Jean Luc Picard',
+            '2018-03-11',
+            '[Order ID: 3, Quantity: 20, Product: toilet paper]'],
+            [3,
+            'Jonathan Archer',
+            '2018-03-11',
+            '[Order ID: 4, Quantity: 1, Product: mop]']
+        ]
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response_json), 4)
+        self.assertEqual(response_json, expected_json)
+    
+
     def test_products_sold_year(self):
-        response = self.app.get('/orders', 
-            headers={'Content-Type': 'application/json'},
-            data=json.dumps({
-                'start_date': '1/1/2000',
-                'end_date': '6/15/2018',
-                'interval': 'year'
-                })
-            )
+        response = self.app.get('/api/orders/2000-1-1/2018-06-15/year')
         response_json = json.loads(response.data)
         expected_json = {
             'Bleach': 0.5555555555555556,
