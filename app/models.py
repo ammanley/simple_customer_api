@@ -12,10 +12,10 @@ class Order(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     order_items = db.relationship('OrderItem', backref='order', lazy=True)
 
-    def __init__(self, customer_id, status, date=datetime.datetime.now().strftime('%m/%d/%Y')):
+    def __init__(self, customer_id, status, date=datetime.datetime.now().strftime('%Y-%m-%d')):
         self.customer_id = customer_id
         self.status = status
-        self.date = datetime.datetime.strptime(date, '%m/%d/%Y')
+        self.date = datetime.datetime.strptime(date, '%Y-%m-%d')
 
     def __repr__(self):
         return "Customer: {}, {}, {}".format(self.customer_id, self.status, self.date)

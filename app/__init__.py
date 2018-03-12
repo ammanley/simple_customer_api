@@ -17,7 +17,6 @@ from app.models import Customer, Category, Product, Order
 def page_not_found(e):
     return render_template('404.html'), 404
 
-
 @app.route("/", methods=['GET'])
 def root():
     return "This is the root of the app, you probablly are looking for /api"
@@ -34,7 +33,7 @@ def customers():
     """
     Provides  JSON of all customers with thteir associated IDs (so you can look up someone easy during testing the API
     """
-    customers = Customer.query.all()
+    customers = [repr(customer) for customer in Customer.query.all()]
     return jsonify(customers)
 
 
@@ -60,7 +59,7 @@ def customers_orders(id):
     return jsonify(results)
 
 
-@app.route("/api/customers/categories", methods=['GET'])
+@app.route("/api/products/categories", methods=['GET'])
 def customer_categories():
     """
     Return JSON of the quantity of items purchased in a particular 
@@ -88,18 +87,30 @@ def products():
     Provide JSON of all current products that can be ordered and their product.ids
     """
     if request.method == 'GET':
-        results = {product.id: product.name for product in Product.query.all()}
+#        import ipdb; ipdb.set_trace()
+        results = {product.id: [product.name, repr(product.categories)] for product in Product.query.all()}
         return jsonify(results)
 
+
+@app.route("/api/orders", methods=["GET"])
 @app.route("/api/orders/<start_date>/<end_date>/", methods=['GET'])
 @app.route("/api/orders/<start_date>/<end_date>/<interval>", methods=['GET'])
-def products_by_date(start_date, end_date, interval=None):
+def orders_by_date(start_date=None, end_date=None, interval=None):
     """
     Provide a GET request with 'start_date' and 'end_date' 
     keys in yyyy-mm-dd format and an optional 'interval' key of day, week, or month
     and returns list of all products sold in time interval, and how many by day/week/month
     """
     if request.method == 'GET':
+        if all(param is None for param in [start_date, end_date, interval]):
+            orders = Order.query.all()
+            results = [
+                [order.customer_id, 
+                repr(order.customers), 
+                order.date.strftime('%Y-%m-%d'), 
+                repr(order.order_items)] for order in orders
+            ]
+            return jsonify(results)
         try:
             start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
@@ -110,6 +121,8 @@ def products_by_date(start_date, end_date, interval=None):
         if interval is not None and interval not in ['day', 'month', 'year']:
             return make_response(jsonify(error='Invalid interval format (use day, month, or year).'), 400)
         delta = end_date-start_date
+        if delta.total_seconds() < 0:
+            return make_response(jsonify(error='Invalid date range, ending date cannot be before starting date.'), 400)
         orders = Order.query.filter(Order.date.between(start_date, end_date)).all()
         items_quantities = {}
         for order in orders:

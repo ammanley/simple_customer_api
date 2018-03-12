@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Shipt API Example</title>
+	<title>Shipt Customer API </title>
 	<link rel="stylesheet" type="text/css" href="/static/styles/styles.css">
 </head>
 <body>
@@ -10,10 +10,11 @@
 		<p class="root-wrapper">The app is up and flying and ready to go!</p>
 		<p class="root-wrapper">Try not to crash me, but if you do, know there's a Miracle Worker&trade; on-board.</p>
 			<ul class="routes">
-				<li><h3>/customers</h3> Lookup all customers and their associated IDs</li>
+				<li><h3><a href="customers">/customers</a></h3> Lookup all customers and their associated IDs</li>
 				<li><h3>/customers/&lt;id&gt;</h3>  Lookup info and orders for a specific customer ID</li>
-				<li><h3>/products</h3>  View all products and categories available</li>
-				<li><h3>/orders</h3>  View all orders</li>
+				<li><h3><a href="products">/products</a></h3>  View all products and categories available</li>
+				<li><h3><a href="products/categories">/products/categories</a></h3>  View all products by category</li>
+				<li><h3><a href="orders">/orders</a></h3>  View all orders</li>
 				<li><h3>/orders/yyyy-mm/dd/yyyy-mm-dd</h3>  View all orders placed within a specific start/end date range</li>
 				<li><h3>/orders/yyyy-mm-dd/yyyy-mm-dd/&lt;day/week/month&gt;</h3>  View all orders from a specific start/end date range, and list breakdown of products sold per day/week/month</li>
 			</ul>
