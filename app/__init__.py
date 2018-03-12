@@ -1,7 +1,8 @@
-from flask import Flask, render_template, jsonify, request, make_response, abort
+from flask import Flask, render_template, jsonify, request, make_response, abort, send_file
 from flask_sqlalchemy import SQLAlchemy
 import os
 import datetime
+import csv
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'postgres://localhost/customer_api'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -95,13 +96,15 @@ def products():
 @app.route("/api/orders", methods=["GET"])
 @app.route("/api/orders/<start_date>/<end_date>/", methods=['GET'])
 @app.route("/api/orders/<start_date>/<end_date>/<interval>", methods=['GET'])
-def orders_by_date(start_date=None, end_date=None, interval=None):
+@app.route("/api/orders/<start_date>/<end_date>/<interval>/<export>", methods=['GET'])
+def orders_by_date(start_date=None, end_date=None, interval=None, export=None):
     """
     Provide a GET request with 'start_date' and 'end_date' 
     keys in yyyy-mm-dd format and an optional 'interval' key of day, week, or month
     and returns list of all products sold in time interval, and how many by day/week/month
     """
     if request.method == 'GET':
+        #import ipdb; ipdb.set_trace()
         if all(param is None for param in [start_date, end_date, interval]):
             orders = Order.query.all()
             results = [
@@ -121,6 +124,7 @@ def orders_by_date(start_date=None, end_date=None, interval=None):
         if interval is not None and interval not in ['day', 'month', 'year']:
             return make_response(jsonify(error='Invalid interval format (use day, month, or year).'), 400)
         delta = end_date-start_date
+        #import ipdb; ipdb.set_trace()
         if delta.total_seconds() < 0:
             return make_response(jsonify(error='Invalid date range, ending date cannot be before starting date.'), 400)
         orders = Order.query.filter(Order.date.between(start_date, end_date)).all()
@@ -128,6 +132,7 @@ def orders_by_date(start_date=None, end_date=None, interval=None):
         for order in orders:
             for item in order.order_items:
                 items_quantities[item.product.name] = items_quantities.get(item.product.name, 0) + item.quantity
+        #import ipdb; ipdb.set_trace()        
         if interval == 'day':
             results = {key: value/delta.days for key,value in items_quantities.items()}
         elif interval == 'month':
@@ -141,4 +146,15 @@ def orders_by_date(start_date=None, end_date=None, interval=None):
                 order.date.strftime('%Y-%m-%d'), 
                 repr(order.order_items)] for order in orders
             ]
+        if export == "export":
+            with open('app/static/items_per_period.csv', 'w', newline='') as csvfile:
+                fieldnames = ['item', 'frequency_bought_per_{}'.format(interval)]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                for item in results.keys():
+                    writer.writerow({'item': item, 'frequency_bought_per_{}'.format(interval): results[item]})
+                return send_file('static/items_per_period.csv',
+                    mimetype='text/csv',
+                    attachment_filename='items_per_period.csv',
+                    as_attachment=True)
         return jsonify(results)
