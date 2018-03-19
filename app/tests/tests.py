@@ -224,22 +224,22 @@ class TestApp(unittest.TestCase):
         expected_json = [
             [1,
             'James T. Kirk',
-            '2018-03-11',
+            '2018-03-12',
             '[Order ID: 1, Quantity: 5, Product: Bleach]'],
             [1,
             'James T. Kirk',
-            '2018-03-11',
+            '2018-03-12',
             '[Order ID: 2, Quantity: 5, Product: Bleach, Order ID: 2, Quantity: 2, '
             'Product: small bucket]'],
             [2,
             'Jean Luc Picard',
-            '2018-03-11',
+            '2018-03-12',
             '[Order ID: 3, Quantity: 20, Product: toilet paper]'],
             [3,
             'Jonathan Archer',
-            '2018-03-11',
+            '2018-03-12',
             '[Order ID: 4, Quantity: 1, Product: mop]']
-        ]
+            ] 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response_json), 4)
         self.assertEqual(response_json, expected_json)

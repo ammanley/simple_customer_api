@@ -45,7 +45,6 @@ def customers_orders(id):
     """
     customer = Customer.query.filter_by(id=id).first()
     if not customer:
-        #  return render_template('404.html'), 404
         abort(404)
     orders = customer.orders
     results = []
@@ -88,7 +87,6 @@ def products():
     Provide JSON of all current products that can be ordered and their product.ids
     """
     if request.method == 'GET':
-#        import ipdb; ipdb.set_trace()
         results = {product.id: [product.name, repr(product.categories)] for product in Product.query.all()}
         return jsonify(results)
 
@@ -104,7 +102,6 @@ def orders_by_date(start_date=None, end_date=None, interval=None, export=None):
     and returns list of all products sold in time interval, and how many by day/week/month
     """
     if request.method == 'GET':
-        #import ipdb; ipdb.set_trace()
         if all(param is None for param in [start_date, end_date, interval]):
             orders = Order.query.all()
             results = [
@@ -124,7 +121,6 @@ def orders_by_date(start_date=None, end_date=None, interval=None, export=None):
         if interval is not None and interval not in ['day', 'month', 'year']:
             return make_response(jsonify(error='Invalid interval format (use day, month, or year).'), 400)
         delta = end_date-start_date
-        #import ipdb; ipdb.set_trace()
         if delta.total_seconds() < 0:
             return make_response(jsonify(error='Invalid date range, ending date cannot be before starting date.'), 400)
         orders = Order.query.filter(Order.date.between(start_date, end_date)).all()
@@ -132,7 +128,6 @@ def orders_by_date(start_date=None, end_date=None, interval=None, export=None):
         for order in orders:
             for item in order.order_items:
                 items_quantities[item.product.name] = items_quantities.get(item.product.name, 0) + item.quantity
-        #import ipdb; ipdb.set_trace()        
         if interval == 'day':
             results = {key: value/delta.days for key,value in items_quantities.items()}
         elif interval == 'month':
